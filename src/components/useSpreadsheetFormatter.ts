@@ -1,6 +1,3 @@
-// useSpreadsheetFormatter.ts
-import { ref } from 'vue'
-
 export const useSpreadsheetFormatter = () => {
   const normalizeInput = (input: string): string[][] => {
     // Split into lines and remove empty lines
