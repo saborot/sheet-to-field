@@ -1,18 +1,26 @@
+// useSpreadsheetFormatter.ts
 export const useSpreadsheetFormatter = () => {
+  const DEFAULT_MAX_WIDTH = 150 // in pixels
+  const COLUMN_PADDING = 20 // in pixels
+
+  const measureTextWidth = (text: string): number => {
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+    if (!context) return 0
+
+    context.font = '14px Helvetica, Arial, sans-serif'
+    const metrics = context.measureText(text)
+    return Math.ceil(metrics.width)
+  }
+
   const normalizeInput = (input: string): string[][] => {
-    // Split into lines and filter out completely empty lines
+    // Split into lines and filter out empty lines
     const lines = input.split('\n').filter(line => line.trim())
 
-    // Find the maximum number of columns
-    const maxColumns = Math.max(...lines.map(line => line.split('\t').length))
-
-    // Process each line, preserving empty columns
     return lines.map(line => {
+      // Preserve all tabs, even consecutive ones
       const cells = line.split('\t')
-      // Pad with empty strings if needed to maintain column count
-      while (cells.length < maxColumns) {
-        cells.push('')
-      }
+      // Don't filter out empty cells - they determine column position
       return cells.map(cell => cell.trim())
     })
   }
@@ -21,42 +29,39 @@ export const useSpreadsheetFormatter = () => {
     const widths: number[] = []
     rows.forEach(row => {
       row.forEach((cell, index) => {
-        // Include empty cells in width calculation
-        widths[index] = Math.max(widths[index] || 0, cell.length)
+        const cellWidth = measureTextWidth(cell || '')
+        widths[index] = Math.max(widths[index] || 0, cellWidth)
       })
     })
-    return widths
+    return widths.map(width => width + COLUMN_PADDING)
   }
 
-  const isNumeric = (str: string): boolean => {
-    return /^-?\$?\d+\.?\d*$/.test(str.trim()) || /^-?\d+\.?\d*%?$/.test(str.trim())
-  }
-
-  const padCell = (cell: string, width: number, alignment: 'left' | 'right'): string => {
-    const padding = width - cell.length
-    if (alignment === 'right') {
-      return ' '.repeat(padding) + cell
-    }
-    return cell + ' '.repeat(padding)
+  const padCell = (cell: string, width: number): string => {
+    const cellWidth = measureTextWidth(cell || '')
+    const spacesNeeded = Math.ceil((width - cellWidth) / measureTextWidth(' '))
+    return (cell || '') + ' '.repeat(Math.max(0, spacesNeeded))
   }
 
   const formatSpreadsheetContent = (input: string): string => {
     if (!input.trim()) return ''
 
-    // Process the input into structured data
+    // Log the input structure
+    console.log('Raw input:', input.replace(/\t/g, '[TAB]'))
+
     const rows = normalizeInput(input)
+    console.log('Processed rows:', rows)
 
-    // Get column widths
     const columnWidths = getColumnWidths(rows)
+    console.log('Column widths:', columnWidths)
 
-    // Format each row
     return rows.map(row => {
+      // Make sure we use every column position
+      while (row.length < columnWidths.length) {
+        row.push('')
+      }
       return row.map((cell, colIndex) => {
-        // Determine alignment
-        const alignment = isNumeric(cell) ? 'right' : 'left'
-
-        return padCell(cell, columnWidths[colIndex], alignment)
-      }).join('  ') // Two spaces between columns
+        return padCell(cell, columnWidths[colIndex])
+      }).join('')
     }).join('\n')
   }
 

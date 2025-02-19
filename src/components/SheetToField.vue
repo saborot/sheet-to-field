@@ -8,7 +8,7 @@
           class="w-100 pa-2 border rounded"
           @input="formatText"
           :style="{
-            fontFamily: 'Consolas, Monaco, Courier New, monospace',
+            fontFamily: 'Helvetica, Courier New',
             whiteSpace: 'pre',
             wordWrap: 'normal',
             overflowX: 'auto',
@@ -42,7 +42,7 @@
           readonly
           class="w-100 h-100 pa-2 border rounded"
           :style="{
-            fontFamily: 'Consolas, Monaco, Courier New, monospace',
+            fontFamily: 'Helvetica, Courier New',
             whiteSpace: 'pre',
             wordWrap: 'normal',
             overflowX: 'auto',
