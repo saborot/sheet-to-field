@@ -1,14 +1,19 @@
 export const useSpreadsheetFormatter = () => {
   const normalizeInput = (input: string): string[][] => {
-    // Split into lines and remove empty lines
+    // Split into lines and filter out completely empty lines
     const lines = input.split('\n').filter(line => line.trim())
 
-    // Process each line
+    // Find the maximum number of columns
+    const maxColumns = Math.max(...lines.map(line => line.split('\t').length))
+
+    // Process each line, preserving empty columns
     return lines.map(line => {
-      // Split by tabs and clean up each cell
-      return line.split('\t')
-        .map(cell => cell.trim())
-        .filter(cell => cell.length > 0)
+      const cells = line.split('\t')
+      // Pad with empty strings if needed to maintain column count
+      while (cells.length < maxColumns) {
+        cells.push('')
+      }
+      return cells.map(cell => cell.trim())
     })
   }
 
@@ -16,10 +21,15 @@ export const useSpreadsheetFormatter = () => {
     const widths: number[] = []
     rows.forEach(row => {
       row.forEach((cell, index) => {
+        // Include empty cells in width calculation
         widths[index] = Math.max(widths[index] || 0, cell.length)
       })
     })
     return widths
+  }
+
+  const isNumeric = (str: string): boolean => {
+    return /^-?\$?\d+\.?\d*$/.test(str.trim()) || /^-?\d+\.?\d*%?$/.test(str.trim())
   }
 
   const padCell = (cell: string, width: number, alignment: 'left' | 'right'): string => {
@@ -42,9 +52,8 @@ export const useSpreadsheetFormatter = () => {
     // Format each row
     return rows.map(row => {
       return row.map((cell, colIndex) => {
-        // Determine alignment based on content
-        const isNumber = /^-?[\d,]+\.?\d*$/.test(cell)
-        const alignment = isNumber ? 'right' : 'left'
+        // Determine alignment
+        const alignment = isNumeric(cell) ? 'right' : 'left'
 
         return padCell(cell, columnWidths[colIndex], alignment)
       }).join('  ') // Two spaces between columns
